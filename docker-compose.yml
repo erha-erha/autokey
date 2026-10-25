@@ -1,0 +1,16 @@
+services:
+  autokey:
+    build: .
+    container_name: autokey-service
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:8080:8080"
+    environment:
+      - AUTOKEY_HOST=0.0.0.0
+      - AUTOKEY_PORT=8080
+      - AUTOKEY_DATA_DIR=/app/data
+      - AUTOKEY_TOKEN=${AUTOKEY_TOKEN:?Set a random AUTOKEY_TOKEN of at least 32 characters}
+    volumes:
+      - ./data:/app/data
+      # Optional: mount existing accounts directory if present
+      # - /opt/microsoft-rewards-script/runtime/accounts:/opt/microsoft-rewards-script/runtime/accounts:ro

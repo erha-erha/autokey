@@ -1,0 +1,32 @@
+{
+  "name": "autokey",
+  "version": "1.0.0",
+  "description": "Microsoft Account Passkey & Software Key Manager with Strong Multi-Account Isolation for Linux",
+  "type": "module",
+  "main": "src/index.mjs",
+  "bin": {
+    "autokey": "./bin/autokey.mjs"
+  },
+  "scripts": {
+    "start": "node bin/autokey.mjs serve",
+    "test": "node --test tests/*.test.mjs",
+    "test:integration": "node test_integration.mjs",
+    "test:all": "npm test && npm run test:integration"
+  },
+  "keywords": [
+    "passkey",
+    "webauthn",
+    "microsoft",
+    "fido2",
+    "cdp",
+    "isolation",
+    "linux"
+  ],
+  "author": "",
+  "engines": { "node": ">=22" },
+  "license": "MIT",
+  "dependencies": {
+    "patchright": "^1.60.0",
+    "ws": "^8.18.0"
+  }
+}

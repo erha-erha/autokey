@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AutoKey - 微软软件密钥 & Passkey 隔离认证管理器</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="app-container">
+    <!-- Header -->
+    <header class="header">
+      <div class="logo-area">
+        <div class="logo-icon">🔑</div>
+        <div>
+          <h1>AutoKey</h1>
+          <p class="subtitle">Linux 远程服务器 · 微软 Passkey / 软件密钥多账号隔离运行系统</p>
+        </div>
+      </div>
+      <div class="stats-bar">
+        <div class="stat-item">
+          <span class="stat-value" id="stat-total">0</span>
+          <span class="stat-label">总账号</span>
+        </div>
+        <div class="stat-item">
+          <span class="stat-value text-success" id="stat-passkeys">0</span>
+          <span class="stat-label">本地 Passkey</span>
+        </div>
+        <div class="stat-item">
+          <span class="stat-value text-primary" id="stat-sessions">0</span>
+          <span class="stat-label">本地会话文件（未验证）</span>
+        </div>
+      </div>
+    </header>
+
+    <!-- Toolbar -->
+    <div class="toolbar">
+      <div class="toolbar-left">
+        <button class="btn btn-primary" onclick="openAddAccountModal()">+ 添加账号</button>
+        <button class="btn btn-secondary" onclick="importFromMrs()">📥 从服务器已存账号同步</button>
+        <button class="btn btn-outline" onclick="loadAccounts()">🔄 刷新列表</button>
+        <button class="btn btn-outline" onclick="viewDeviceInfo()">⚙️ 系统信息</button>
+      </div>
+      <div class="toolbar-right">
+        <input type="text" id="search-input" placeholder="搜索邮箱或账号..." oninput="filterAccounts()">
+      </div>
+    </div>
+
+    <!-- Accounts Table -->
+    <div class="table-container">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>账号 / 邮箱</th>
+            <th>Passkey 密钥状态</th>
+            <th>会话状态</th>
+            <th>代理配置</th>
+            <th>最后登录</th>
+            <th>操作</th>
+          </tr>
+        </thead>
+        <tbody id="accounts-table-body">
+          <tr>
+            <td colspan="6" class="text-center py-4">正在加载账号数据...</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Interactive Screencast Modal -->
+  <div class="modal" id="screencast-modal">
+    <div class="modal-content modal-large">
+      <div class="modal-header">
+        <div class="modal-title-group">
+          <span class="modal-title" id="screencast-title">远程交互式浏览器</span>
+          <span class="badge badge-info" id="screencast-status">连接中...</span>
+        </div>
+        <div class="modal-actions">
+          <button class="btn btn-sm btn-outline" onclick="quickNav('https://account.live.com/proofs/manage/additional')">🛡️ 安全管理页</button>
+          <button class="btn btn-sm btn-outline" onclick="quickNav('https://login.live.com/')">🔐 登录页</button>
+          <button class="btn btn-sm btn-danger" onclick="closeScreencast()">✖ 关闭</button>
+        </div>
+      </div>
+      <div class="screencast-toolbar">
+        <span class="nav-hint">💡 在下方屏幕中直接点击或输入。点击微软「添加通行密钥」时，AutoKey 会自动完成软件签名并导出密钥！</span>
+        <span id="passkey-badge" class="badge badge-success hidden">✅ 捕获并保存 Passkey 成功！</span>
+      </div>
+      <div class="screencast-canvas-container" id="canvas-container">
+        <canvas id="screencast-canvas" width="1280" height="800" tabindex="0"></canvas>
+      </div>
+    </div>
+  </div>
+
+  <!-- Add Account Modal -->
+  <div class="modal" id="add-account-modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <span class="modal-title">添加新微软账号</span>
+        <button class="btn-close" onclick="closeAddAccountModal()">✖</button>
+      </div>
+      <form id="add-account-form" onsubmit="submitAddAccount(event)">
+        <div class="form-group">
+          <label>微软账号邮箱</label>
+          <input type="email" id="acc-email" required placeholder="example@example.com">
+        </div>
+        <div class="form-group">
+          <label>显示名称 (可选)</label>
+          <input type="text" id="acc-name" placeholder="账号别名">
+        </div>
+        <div class="form-group">
+          <label>独立代理配置 (可选，支持 HTTP/SOCKS5)</label>
+          <input type="text" id="acc-proxy" placeholder="http://user:pass@host:port 或 socks5://host:port">
+        </div>
+        <div class="form-actions">
+          <button type="button" class="btn btn-outline" onclick="closeAddAccountModal()">取消</button>
+          <button type="submit" class="btn btn-primary">创建独立沙箱</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Passkey Details Modal -->
+  <div class="modal" id="passkey-details-modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <span class="modal-title">Passkey 软件密钥详情</span>
+        <button class="btn-close" onclick="closePasskeyModal()">✖</button>
+      </div>
+      <div class="passkey-info-area">
+        <pre id="passkey-json-viewer"></pre>
+      </div>
+      <div class="form-actions">
+        <button class="btn btn-outline" onclick="downloadPasskeyJson()">💾 下载 passkey.json</button>
+        <button class="btn btn-primary" onclick="closePasskeyModal()">完成</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal" id="device-info-modal" role="dialog" aria-modal="true" aria-labelledby="device-info-title">
+    <div class="modal-content device-modal-content">
+      <div class="modal-header">
+        <span class="modal-title" id="device-info-title">设备与系统信息</span>
+        <button class="btn-close" onclick="closeDeviceInfo()" aria-label="关闭设备信息">✖</button>
+      </div>
+      <div id="device-info-content" class="device-info-content" aria-live="polite"></div>
+      <div class="form-actions">
+        <button class="btn btn-outline" onclick="refreshDeviceInfo()">刷新信息</button>
+        <button class="btn btn-primary" onclick="closeDeviceInfo()">关闭面板</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal" id="auth-modal">
+    <div class="modal-content">
+      <div class="modal-header"><span class="modal-title">控制台访问认证</span></div>
+      <form onsubmit="submitAuth(event)">
+        <div class="form-group">
+          <label for="auth-token">AUTOKEY_TOKEN 访问令牌</label>
+          <input type="password" id="auth-token" required autocomplete="current-password" placeholder="输入服务器配置的访问令牌">
+        </div>
+        <div class="form-actions"><button type="submit" class="btn btn-primary">连接控制台</button></div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Toast Notification -->
+  <div class="toast" id="toast"></div>
+
+  <script src="app.js"></script>
+</body>
+</html>

@@ -1,0 +1,36 @@
+node_modules/
+data/
+*.log
+.DS_Store
+.env
+.env.*
+artifacts/
+*.tgz
+
+# Private research, deployment output and history backups
+idea.md
+backups/
+*.bundle
+*.bak
+*.zip
+*.tar
+*.tar.gz
+*.7z
+browsers/
+browsers-*/
+
+# Credentials and browser/session exports, even outside data/
+account.json
+*passkey*.json
+storage_state*.json
+device_info.json
+.session.lock
+browser_profile/
+browser-profile/
+*.pem
+*.key
+*.p12
+*.pfx
+*.kdbx
+*.sqlite
+*.sqlite3
